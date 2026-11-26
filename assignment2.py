@@ -77,28 +77,8 @@ dead_zone=[]
 # Win tile
 win_tile=[]
 
-# Master function to start the game, with l being the level
-def init(l):
-    # Draws the start point
-    p_move(interact, -500, -500)
-    color_fill(interact, "black", "#8B8B8B")
-    draw_rect(interact, 100, 100)
-    interact.end_fill()
 
-    # Draw the finish box
-    win_zone(interact, 400,400,500,500)
-    interact.end_fill()
-
-    # Move player to initial position
-    p_move(player, -450, -450)
-
-    # Done, passing off to -> Initialize keystroke binding
-    init_obstacle(l)
-    init_player()
-    if l == 0:
-        main_screen_show()
-
-"""That's crazy
+"""
 -----------------------3. Framework logics below here (All, we'll make this progressively)---------------------
 
 """
@@ -128,12 +108,6 @@ def win_zone(p, x1, y1, x2, y2):
     win_tile = [x1, y1, x2, y2]
 
 # This goes in pair! if you call validate and it gives something else than 0, call dictionary to know what it means.
-# Example:
-# 
-# valid = validate()                      # 2
-# if valid != 0:                          # True
-#     text = dictionary(valid)            # "You hit a wall"
-#     game_over(text)                     #  Display the text "You hit a wall"
 
 def dictionary(c):
     codes = ["Good", "You overlapped yourself", "You hit a wall", "You ran out of bound", "You won"]
@@ -146,7 +120,7 @@ def validate():
             return 2
     if win_tile and win_tile[0] <= x <= win_tile[2] and win_tile[1] <= y <= win_tile[3]:
         return 4
-    if h.__contains__([x,y]):
+    if [x,y] in h:
         return 1
     elif (-500>x or 500<x) or (-500>y or 500<y):
         return 3
@@ -196,7 +170,6 @@ def move_d():
 def init_player():
     # Write player logics here and also define key events here too
     keys=["w","a","s","d","Up","Left","Down","Right"]
-
 """
 -----------------------5. Draw levels and death block logic below here (Thashith)---------------------
 """
@@ -224,12 +197,13 @@ def init_obstacle(level):
 # Stores a list of buttons. the syntax for appending button coordinates are [x1,y1,x2,y2]
 buttons = []
 action = None
+initPlayerOnNextMenuScreenClear = False
 
 
 # Function to show the main screen and hide the main screen (main screen is the screen to say like welcome to our game, made by who, ...)
 # Remember! You need to remove the button wrapper when you hide a screen!
 def main_screen_show():
-    global buttons, action
+    global buttons, action, initPlayerOnNextMenuScreenClear
     menu.up()
     p_move(menu, -400, -400)
     color_fill(menu, False, "gray")
@@ -239,18 +213,22 @@ def main_screen_show():
     menu.write("Hi welcome to our game, click to start", font=("Arial", 24, "normal"))
     p_move(menu, -200, -300)
     color_fill(menu, False, "green")
-    draw_rect(menu, 400, 100)
+    draw_rect(menu, 100, 400)
     menu.end_fill()
     p_move(menu, -100, -250)
     menu.write("Start", font=("Arial", 24, "normal"))
 
     # Flat list of coordinates: [x1, y1, x2, y2]
     buttons = [-200, -300, 200, -200]
+    initPlayerOnNextMenuScreenClear = True
     action = menu_screen_clear
 
 
 def menu_screen_clear():
-    global buttons, action
+    global buttons, action, initPlayerOnNextMenuScreenClear
+    if initPlayerOnNextMenuScreenClear:
+        init_player()
+        initPlayerOnNextMenuScreenClear = False
     buttons = []
     action = None
     menu.clear()
@@ -259,7 +237,7 @@ def menu_screen_clear():
 
 # Function to show the you lost screen
 def game_over(text):
-    stop_game()
+    uninit_player()
     pass
 
 
@@ -284,6 +262,7 @@ def click(x, y):
 """
 
 def reset_all():
+    uninit_player()
     player.clear()
     menu.clear()
     die.clear()
@@ -302,13 +281,36 @@ def reset_playfield():
     dead_zone.clear()
     win_tile.clear()
 
-def stop_game():
+def uninit_player():
     # unbind all keys
     keys=["w","a","s","d","Up","Left","Down","Right"]
     for key in keys:
         screen.onkeypress(None, key)
 
+# Master function to start the game, with l being the level
+def init(l):
+    # Draws the start point
+    p_move(interact, -500, -500)
+    color_fill(interact, "black", "#8B8B8B")
+    draw_rect(interact, 100, 100)
+    interact.end_fill()
+
+    # Draw the finish box
+    win_zone(interact, 400,400,500,500)
+    interact.end_fill()
+
+    # Move player to initial position
+    p_move(player, -450, -450)
+    record(-450, -450)
+
+    # Done, passing off to -> Initialize keystroke binding
+    init_obstacle(l)
+    
+    if l == 0:
+        main_screen_show()
+
 screen.onkey(reset_all, "r")
+screen.onclick(click)
 
 
 # Start everything
